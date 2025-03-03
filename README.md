@@ -77,3 +77,16 @@ além de instanciar e injetar os serviços e módulos necessários para tudo fun
 
 `[nome do módulo]-controller-factory.ts`
 
+### CI/CD
+
+A automação é configurada para o ambiente de produção (branch main) e ambiente de homologação (branch develop)
+O arquivo de configuração deve ser editado de acordo com o projeto a ser criado
+
+### Observabilidade
+
+A rota /healthcheck está configurada para checagens de disponibilidade.
+O Agente de APM está instalado e deve ser configurado através de variáveis de ambiente:
+
+`ELASTIC_APM_SERVICE_NAME=Application-name`
+`ELASTIC_APM_SERVER_URL=` (internal: http://srv-elastic-01.oscar:8200 | external: https://apm-server.grupooscar.com.br)
+`NODE_ENV=development` (local | production | development)
