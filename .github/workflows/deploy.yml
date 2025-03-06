@@ -62,7 +62,7 @@ jobs:
 
       - name: Atualiza imagem no Kubernetes ## Adicione o nome do deployment e do namespace para identificação na linha 72
         run: |
-          curl -s -X POST http://ec2-54-224-51-84.compute-1.amazonaws.com:5678/webhook/k8s-rollout \
+          curl -s -X POST https://n8n.oscarcloud.com.br/webhook/k8s-rollout \
           -d "deployment=xxxxxxxxxx&namespace=xxxxxxxxxx" \
           -H "Content-Type: application/x-www-form-urlencoded"
 
