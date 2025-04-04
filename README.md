@@ -75,8 +75,6 @@ além de instanciar e injetar os serviços e módulos necessários para tudo fun
 
 `[nome do módulo]-routes.ts`
 
-`[nome do módulo]-controller-factory.ts`
-
 ### CI/CD
 
 A automação é configurada para o ambiente de produção (branch main) e ambiente de homologação (branch develop)
