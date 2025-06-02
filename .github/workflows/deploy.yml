@@ -60,11 +60,17 @@ jobs:
           docker push $IMAGE_NAME:${{ env.VERSION }}
           docker push $IMAGE_NAME:latest
 
-      - name: Atualiza imagem no Kubernetes ## Adicione o nome do deployment e do namespace para identificação na linha 72
+      - name: Configura credenciais da AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Atualiza imagem no Kubernetes
         run: |
-          curl -s -X POST https://n8n.oscarcloud.com.br/webhook/k8s-rollout \
-          -d "deployment=xxxxxxxxxx&namespace=xxxxxxxxxx" \
-          -H "Content-Type: application/x-www-form-urlencoded"
+          aws eks update-kubeconfig --name eks-fsw-01 --region us-east-1
+          kubectl rollout restart deployment/webview -n mscredsystem
 
       - name: Notifica finalização no Discord ## Adicione o nome do repositório para identificação na linha 76
         run: |
