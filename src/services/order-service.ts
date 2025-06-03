@@ -1,52 +1,49 @@
 import axios from 'axios';
+import * as fs from 'fs';
 
 import { AppDataSource } from '../db';
 import { env } from '../env';
 
 export class OrderService {
   private readonly endDate = '2025-05-31T23:59:59.999Z';
+  private readonly logFilePath = './logs/order-service.log';
   private readonly startDate = '2025-05-16T00:00:00.000Z';
   private readonly vtexAppKey = env.VTEX_KEY;
-
   private readonly vtexAuthToken = env.VTEX_TOKEN;
   private readonly vtexBaseUrl = env.VTEX_URL;
 
   async updateSellerIds(): Promise<void> {
     try {
       const vtexOrders = await this.getOrdersFromVtex();
-      const filteredOrderIds = vtexOrders
-        .filter((order) => order.salesChannel === '5')
-        .map((order) => order.orderId);
+      const filteredOrders = vtexOrders.filter(
+        (order) => order.salesChannel === '5'
+      );
 
-      if (filteredOrderIds.length === 0) {
-        console.log('No orders with salesChannel 5 found.');
+      if (filteredOrders.length === 0) {
+        const message = 'No orders with salesChannel 5 found.';
+        console.log(message);
+        this.logMessage(message);
         return;
       }
 
-      const existingOrderIds =
-        await this.getExistingOrderIdsFromDatabase(filteredOrderIds);
+      const processingMessage = `Processing ${filteredOrders.length} orders with salesChannel 5`;
+      console.log(processingMessage);
+      this.logMessage(processingMessage);
 
-      for (const orderId of existingOrderIds) {
-        const sellerId = await this.getSellerIdFromVtex(orderId);
-        await this.updateOrderInDatabase(orderId, sellerId);
+      for (const order of filteredOrders) {
+        const sellerId = await this.getSellerIdFromVtex(order.orderId);
+        await this.updateOrderInDatabase(order.orderId, sellerId);
       }
+
+      const successMessage = 'All orders processed successfully';
+      console.log(successMessage);
+      this.logMessage(successMessage);
     } catch (error) {
-      console.error('Error in updateSellerIds:', error);
+      const errorMessage = `Error in updateSellerIds: ${error.message}`;
+      console.error(errorMessage);
+      this.logMessage(errorMessage);
       throw error;
     }
-  }
-
-  private async getExistingOrderIdsFromDatabase(
-    orderIds: string[]
-  ): Promise<string[]> {
-    const result = await AppDataSource.createQueryBuilder()
-      .select('PEDIDOECOMMERCE')
-      .from('T_ORCAMENTO', 't')
-      .where('PEDIDOECOMMERCE IN (:...orderIds)', { orderIds })
-      .andWhere('integrador LIKE :integrador', { integrador: '%VTEX%' })
-      .getRawMany();
-
-    return result.map((row: any) => row.PEDIDOECOMMERCE);
   }
 
   private async getOrdersFromVtex(): Promise<any[]> {
@@ -56,44 +53,48 @@ export class OrderService {
         'X-VTEX-API-AppToken': this.vtexAuthToken,
       },
       params: {
-        f_invoicedDate: `invoicedDate:[${this.startDate} TO ${this.endDate}]`,
+        f_creationDate: `invoicedDate:[${this.startDate} TO ${this.endDate}]`,
       },
     });
-
     return response.data.list || [];
   }
 
   private async getSellerIdFromVtex(orderId: string): Promise<string> {
     const url = `${this.vtexBaseUrl}/api/oms/pvt/orders/${orderId}`;
-
     const response = await axios.get(url, {
       headers: {
         'X-VTEX-API-AppKey': this.vtexAppKey,
         'X-VTEX-API-AppToken': this.vtexAuthToken,
       },
     });
-
     const openTextField = response.data.openTextField;
-    return openTextField && openTextField.value ? openTextField.value : 'XXXX';
+    return openTextField && openTextField.value ? openTextField.value : '15602';
+  }
+
+  private logMessage(message: string): void {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}\n`;
+
+    fs.appendFileSync(this.logFilePath, logEntry, 'utf8');
   }
 
   private async updateOrderInDatabase(
     orderId: string,
     openTextFieldValue: string
   ): Promise<void> {
-    const query = `
-      UPDATE t_orcamento
-      SET PEDIDOECOMMERCE = ?
-      WHERE PEDIDOECOMMERCE = ?
-    `;
+    const query = `UPDATE t_orcamento
+      SET IDVENDEDOR = :1
+      WHERE PEDIDOECOMMERCE = :2`;
 
     try {
       await AppDataSource.query(query, [openTextFieldValue, orderId]);
-      console.log(
-        `Order ${orderId} updated with openTextField value: ${openTextFieldValue}`
-      );
+      const successMessage = `Order ${orderId} updated with openTextField value: ${openTextFieldValue}`;
+      console.log(successMessage);
+      this.logMessage(successMessage);
     } catch (error) {
-      console.error(`Error updating order ${orderId}:`, error);
+      const errorMessage = `Error updating order ${orderId}: ${error.message}`;
+      console.error(errorMessage);
+      this.logMessage(errorMessage);
     }
   }
 }
