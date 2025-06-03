@@ -41,8 +41,9 @@ export class OrderService {
   ): Promise<string[]> {
     const result = await AppDataSource.createQueryBuilder()
       .select('PEDIDOECOMMERCE')
-      .from('t_orcamento', 't')
+      .from('T_ORCAMENTO', 't')
       .where('PEDIDOECOMMERCE IN (:...orderIds)', { orderIds })
+      .andWhere('integrador LIKE :integrador', { integrador: '%VTEX%' })
       .getRawMany();
 
     return result.map((row: any) => row.PEDIDOECOMMERCE);
@@ -63,7 +64,7 @@ export class OrderService {
   }
 
   private async getSellerIdFromVtex(orderId: string): Promise<string> {
-    const url = `${this.vtexBaseUrl}/${orderId}`;
+    const url = `${this.vtexBaseUrl}/api/oms/pvt/orders/${orderId}`;
 
     const response = await axios.get(url, {
       headers: {
@@ -76,21 +77,23 @@ export class OrderService {
     return openTextField && openTextField.value ? openTextField.value : 'XXXX';
   }
 
-  // private async updateOrderInDatabase(
-  //   orderId: string,
-  //   sellerId: string
-  // ): Promise<void> {
-  //   const query = `
-  //     UPDATE t_orcamento
-  //     SET IDVENDEDOR = ?
-  //     WHERE PEDIDOECOMMERCE = ?
-  //   `;
+  private async updateOrderInDatabase(
+    orderId: string,
+    openTextFieldValue: string
+  ): Promise<void> {
+    const query = `
+      UPDATE t_orcamento
+      SET PEDIDOECOMMERCE = ?
+      WHERE PEDIDOECOMMERCE = ?
+    `;
 
-  //   try {
-  //     await AppDataSource.query(query, [sellerId, orderId]);
-  //     console.log(`Order ${orderId} updated with Seller ID: ${sellerId}`);
-  //   } catch (error) {
-  //     console.error(`Error updating order ${orderId}:`, error);
-  //   }
-  // }
+    try {
+      await AppDataSource.query(query, [openTextFieldValue, orderId]);
+      console.log(
+        `Order ${orderId} updated with openTextField value: ${openTextFieldValue}`
+      );
+    } catch (error) {
+      console.error(`Error updating order ${orderId}:`, error);
+    }
+  }
 }

@@ -1,7 +1,7 @@
 import { AppDataSource } from '../db';
 
 const query: string = `
-  SELECT * FROM T_ESTOQUE
+  SELECT * FROM T_ORCAMENTO
   WHERE ROWNUM <= 10
 `;
 
