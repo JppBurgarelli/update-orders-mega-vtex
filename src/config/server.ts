@@ -3,7 +3,6 @@ import 'reflect-metadata';
 import { env } from '../env';
 import { apm } from './apm';
 import { app } from './app';
-import './scheduler';
 
 app.addHook('onRequest', (request, reply, done) => {
   if (request.url === '/healthcheck') {

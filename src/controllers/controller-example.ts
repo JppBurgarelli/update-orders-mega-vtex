@@ -4,25 +4,21 @@ import { z } from 'zod';
 import { ServiceExample } from '../services/service-example';
 
 export const controllerMethodExample = async (
-  request: FastifyRequest,
+  _: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const zodSchema = z.object({
-    idEstabelecimento: z.string(),
-  });
-
   try {
-    const { idEstabelecimento } = zodSchema.parse(request.body);
-
     const serviceExample = new ServiceExample();
-    await serviceExample.execute(idEstabelecimento);
+    const products = await serviceExample.execute();
 
-    return reply
-      .status(200)
-      .send({ message: 'Products processed successfully' });
+    return reply.status(200).send({
+      data: products,
+      message: 'Products processed successfully',
+    });
   } catch (error) {
     console.error('Error processing products:', error);
-    ('Internal error while processing products');
-    return reply.status(500).send({});
+    return reply.status(500).send({
+      error: 'Internal error while processing products',
+    });
   }
 };

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/require-await */
 import type { FastifyInstance } from 'fastify';
 
-import * as controllerExample from '../controllers/controller-example';
+import { controllerMethodExample } from '../controllers/controller-example';
+import { updateSellerIdsController } from '../controllers/orders-controller';
 
-export const routeExample = async (app: FastifyInstance) => {
-  app.post('/RoutePatheExample', controllerExample.controllerMethodExample);
+export const ordersRoute = async (app: FastifyInstance) => {
+  app.get('/updateOrders', updateSellerIdsController);
+  app.get('/RoutePatheExample', controllerMethodExample);
 };
